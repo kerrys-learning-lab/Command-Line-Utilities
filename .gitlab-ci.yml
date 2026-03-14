@@ -1,0 +1,7 @@
+include:
+  - project: $GITLABCI_DEFAULT_PIPELINE_PROJECT
+    ref: $GITLABCI_DEFAULT_PIPELINE_REF
+    file:
+      - workflows/python-package.workflow.yaml
+    inputs:
+      UNITTESTS: true
