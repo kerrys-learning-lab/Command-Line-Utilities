@@ -19,7 +19,7 @@ def enforce_mutually_exclusive(
 
 def read_stdin(value: str, prompt: str = None) -> str:
     """If value is '--', read from stdin; otherwise return as-is."""
-    if value != "--":
+    if value != "stdin":
         return value
 
     prompt = prompt or "Reading plaintext from stdin."

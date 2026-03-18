@@ -15,4 +15,4 @@ def test_progress_with_progress_update(entity_list: list[conftest.MockEntity]):
         count = 0
         for _ in progress.invoke():
             count += 1
-            assert progress.update["completed"] == count
+            assert progress.task.completed == count

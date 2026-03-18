@@ -88,7 +88,7 @@ def test_comma_separated_list():
 def test_read_stdin(capsys, monkeypatch):
     expected = "Test of stdin"
     monkeypatch.setattr(sys, "stdin", io.StringIO(expected))
-    stdin = clu.click.read_stdin("--")
+    stdin = clu.click.read_stdin("stdin")
     captured = capsys.readouterr()
     assert "Reading plaintext from stdin" in captured.err
     assert stdin == expected

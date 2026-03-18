@@ -1,3 +1,4 @@
+import inspect
 import typing
 
 
@@ -5,7 +6,7 @@ T = typing.TypeVar("T")
 
 
 def first_match(
-    collection: list[T], assertion: typing.Callable[[T], bool], default=T | None
+    collection: list[T], assertion: typing.Callable[[T], bool], default: T = None
 ) -> T:
     for item in collection:
         if assertion(item):
@@ -20,3 +21,16 @@ def snake_case_to_words(value: str, capitalize: bool = False) -> str:
                                --> Snake case phrase (capitalize: True)"""
     value = value.replace("_", " ")
     return value.capitalize() if capitalize else value
+
+
+def class_properties(cls) -> list[str]:
+    properties: list[str] = getattr(cls, "PROPERTIES", None)
+    if properties is None:
+        properties = []
+
+        for name, _ in inspect.getmembers(cls, lambda v: isinstance(v, property)):
+            properties.append(name)
+
+        setattr(cls, "PROPERTIES", properties)
+
+    return properties

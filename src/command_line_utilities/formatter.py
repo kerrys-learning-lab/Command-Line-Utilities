@@ -1,4 +1,5 @@
 import abc
+import logging
 import pathlib
 import sys
 import typing
@@ -6,6 +7,8 @@ from .filter import Filter
 from .output import OutputFormat, stream, write
 from .table import ObjectListTable
 from .utils import snake_case_to_words
+
+LOGGER = logging.getLogger("clu")
 
 
 class OutputFormatter(abc.ABC):
@@ -127,6 +130,9 @@ class FileOutputFormatter(OutputFormatter):
         for v in self.values:
             write(self._as_dict(v), self.format, self._get_entity_filename(v))
 
+        if self.values:
+            LOGGER.info(f"Wrote {len(self.values)} files to {self.root}")
+
 
 class StreamOutputFormatter(OutputFormatter):
     def __init__(
@@ -162,9 +168,9 @@ class TableOutputFormatter(OutputFormatter):
         )
 
     def __exit__(self, exc_type, exc, tb):
-        table = ObjectListTable(self.title, *self.columns, **self.kwargs)
+        table = ObjectListTable(*self.columns, title=self.title, **self.kwargs)
 
         for v in self.values:
-            table.add_row(v)
+            table.add_object(v)
 
         table.print()

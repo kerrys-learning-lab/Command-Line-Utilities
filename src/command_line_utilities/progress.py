@@ -13,6 +13,49 @@ class ProgressUpdate(typing.Generic[T]):
 
 
 class Progress(typing.Generic[T]):
+    class Task:
+        def __init__(
+            self, title: str, progress: rich.progress.Progress, show_each: bool = False
+        ):
+            self.title = title
+            self.task: rich.progress.TaskID = None
+            self.rich_progress: rich.progress.Progress = progress
+            self.completed = 0
+            self.total = None
+            self.show_each = show_each
+
+        def update(self, value):
+            self.completed += 1
+
+            if isinstance(value, ProgressUpdate):
+                self.total = value.total
+                value = value.value
+
+            self.rich_progress.update(self.task, **self._kwargs(value))
+
+            return value
+
+        def __enter__(self) -> "Progress.Task":
+            self.start()
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            self.stop()
+
+        def start(self):
+            self.task = self.rich_progress.add_task(self.title, **self._kwargs())
+
+        def stop(self):
+            self.rich_progress.update(self.task, visible=False)
+
+        def _kwargs(self, value=None):
+            return {
+                "completed": self.completed,
+                "total": self.total,
+                "each": str(value) if (self.show_each and value) else "",
+                "refresh": True,
+            }
+
     def __init__(
         self,
         title: str,
@@ -24,15 +67,7 @@ class Progress(typing.Generic[T]):
         show_each=True,
         transient=True,
     ):
-        self.title = title
         self.generator_callable = generator_callable
-        self.progress = None
-        self.task = None
-        self.update = {
-            "completed": 0,
-            "total": None,
-            "refresh": True,
-        }
 
         columns = []
         if show_text:
@@ -47,29 +82,21 @@ class Progress(typing.Generic[T]):
             columns.append(rich.progress.MofNCompleteColumn())
         if show_each:
             columns.append(rich.progress.TextColumn("{task.fields[each]}"))
-            self.update["each"] = ""
 
         self.progress = rich.progress.Progress(*columns, transient=transient)
+        self.task = Progress.Task(title, self.progress, show_each=show_each)
 
     def __enter__(self):
         self.progress.start()
-        self.task = self.progress.add_task(self.title, **self.update)
+        self.task.start()
         return self
+
+    def new_task(self, title: str) -> Task:
+        return Progress.Task(title, self.progress)
 
     def invoke(self, *args, **kwargs) -> typing.Generator[T, None, None]:
         for value in self.generator_callable(*args, **kwargs):
-            self.update["completed"] = self.update["completed"] + 1
-
-            if isinstance(value, ProgressUpdate):
-                self.update["total"] = value.total
-                value = value.value
-
-            if "each" in self.update:
-                self.update["each"] = str(value)
-
-            self.progress.update(self.task, **self.update)
-
-            yield value
+            yield self.task.update(value)
 
     def __call__(self, *args, **kwargs) -> typing.Generator[T, None, None]:
         return self.invoke(*args, **kwargs)
