@@ -9,12 +9,11 @@ repos:
       - id: trailing-whitespace
       - id: check-added-large-files
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.5
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.11.7
     hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
+      - id: uv-lock
+        args: [--no-sources]
 
   - repo: local
     hooks:

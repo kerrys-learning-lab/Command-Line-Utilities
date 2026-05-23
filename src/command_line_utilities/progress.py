@@ -1,6 +1,6 @@
 import rich.progress
 import typing
-
+from . import utils
 
 T = typing.TypeVar("T")
 
@@ -14,11 +14,12 @@ class ProgressUpdate(typing.Generic[T]):
 
 class Progress(typing.Generic[T]):
     class Task:
-        def __init__(
-            self, title: str, progress: rich.progress.Progress, show_each: bool = False
-        ):
+        def __init__(self,
+                     title: str,
+                     progress: rich.progress.Progress,
+                     show_each: bool = False):
             self.title = title
-            self.task: rich.progress.TaskID = None
+            self.task: rich.progress.TaskID|None = None
             self.rich_progress: rich.progress.Progress = progress
             self.completed = 0
             self.total = None
@@ -56,17 +57,15 @@ class Progress(typing.Generic[T]):
                 "refresh": True,
             }
 
-    def __init__(
-        self,
-        title: str,
-        generator_callable: typing.Generator[ProgressUpdate[T], None, None],
-        show_text=True,
-        show_bar=True,
-        show_progress=True,
-        show_mofn=True,
-        show_each=True,
-        transient=True,
-    ):
+    def __init__(self,
+                 title: str,
+                 generator_callable: typing.Generator[ProgressUpdate[T], None, None],
+                 show_text = True,
+                 show_bar = True,
+                 show_progress = True,
+                 show_mofn = True,
+                 show_each = True,
+                 transient = True):
         self.generator_callable = generator_callable
 
         columns = []
@@ -83,7 +82,9 @@ class Progress(typing.Generic[T]):
         if show_each:
             columns.append(rich.progress.TextColumn("{task.fields[each]}"))
 
-        self.progress = rich.progress.Progress(*columns, transient=transient)
+        self.progress = rich.progress.Progress(*columns,
+                                               console=utils.console,
+                                               transient=transient)
         self.task = Progress.Task(title, self.progress, show_each=show_each)
 
     def __enter__(self):
