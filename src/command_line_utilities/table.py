@@ -1,7 +1,7 @@
 import rich.box
 import rich.table
 from .output import to_string
-from .utils import class_properties
+from . import utils
 
 
 class TableError(RuntimeError):
@@ -24,18 +24,17 @@ class Table:
     }
 
     @staticmethod
-    def create(*columns: list[str], title: str = None) -> "Table":
+    def create(*columns: str, title: str|None = None) -> "Table":
         return Table(*columns, title=title, **Table.DEFAULT_TABLE_KWARGS)
 
-    def __init__(self, *columns: list[str], title: str = None, **kwargs):
+    def __init__(self, *columns: str, title: str|None = None, **kwargs):
         self.table = rich.table.Table(*columns, title=title, **kwargs)
 
-    def add_row(self, key: str, *value):
-        self.table.add_row(key, *value)
+    def add_row(self, *value):
+        self.table.add_row(*value)
 
     def print(self, stderr: bool = False):
-        console = rich.console.Console(stderr=stderr)
-        console.print(self.table)
+        utils.console.print(self.table)
 
     def __rich__(self) -> rich.table.Table:
         return self.table
@@ -43,20 +42,20 @@ class Table:
 
 class ObjectTable(Table):
     @staticmethod
-    def create(*columns: list[str], title: str = None) -> "ObjectTable":
+    def create(*columns: str, title: str|None = None) -> "ObjectTable":
         return ObjectTable(*columns, title=title, **ObjectTable.DEFAULT_TABLE_KWARGS)
 
     @staticmethod
-    def create_nested(*columns: list[str], title: str = None) -> "ObjectTable":
+    def create_nested(*columns: str, title: str|None = None) -> "ObjectTable":
         return ObjectTable(
             *columns, title=title, **ObjectTable.DEFAULT_NESTED_TABLE_KWARGS
         )
 
-    def __init__(self, *columns: list[str], title: str = None, **kwargs):
-        columns = columns or ["Attribute", "Value"]
+    def __init__(self, *columns: str, title: str|None = None, **kwargs):
+        columns = columns or ("Attribute", "Value")
         super().__init__(*columns, title=title, **kwargs)
 
-    def add_attributes(self, object, attributes: list[str], prefix: str = None):
+    def add_attributes(self, object, attributes: list[str], prefix: str|None = None):
         for attr in attributes:
             attr_column_text = f"{prefix} - {attr}" if prefix else attr
             attr_name = _sanitize_attr_name(attr)
@@ -66,13 +65,13 @@ class ObjectTable(Table):
             self.add_row(attr_column_text, attr_value)
 
 
-class ClassPropertyTable(Table):
+class ClassPropertyTable:
     @staticmethod
-    def create(cls) -> "ClassPropertyTable":
-        table = Table("Property", "Type", title=f"{cls.__name__} Properties")
+    def create(obj) -> "Table":
+        table = Table("Property", "Type", title=f"{obj.__name__} Properties")
 
-        for p in class_properties(cls):
-            cls_property = getattr(cls, p)
+        for p in utils.class_properties(obj):
+            cls_property = getattr(obj, p)
             return_type = cls_property.fget.__annotations__.get("return")
             return_type = getattr(return_type, "__name__", return_type)
             table.add_row(p, str(return_type))
@@ -81,7 +80,7 @@ class ClassPropertyTable(Table):
 
 
 class ObjectListTable(Table):
-    def __init__(self, *columns: list[str], title: str = None, **kwargs):
+    def __init__(self, *columns: str, title: str|None = None, **kwargs):
         super().__init__(*columns, title=title, **kwargs)
         self.attr_names = [_sanitize_attr_name(col_name) for col_name in columns]
 

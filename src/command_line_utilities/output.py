@@ -1,3 +1,4 @@
+import dataclasses
 import datetime
 import enum
 import humanize
@@ -15,9 +16,15 @@ class OutputFormat(str, enum.Enum):
     TABLE = "table"
 
 
+def custom_serializer(value):
+    try:
+        return value.asdict()
+    except AttributeError:
+        return dataclasses.asdict(value)
+
 def dump(value, format: OutputFormat) -> str:
     if format == OutputFormat.JSON:
-        return json.dumps(value, indent=4)
+        return json.dumps(value, indent=4, default=custom_serializer)
     if format == OutputFormat.YAML:
         return yaml.dump(value, default_flow_style=False, sort_keys=False)
     raise RuntimeError(f"Invalid format for dump: '{format}'")

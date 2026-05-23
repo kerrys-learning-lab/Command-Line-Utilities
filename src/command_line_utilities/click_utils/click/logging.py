@@ -1,9 +1,8 @@
 import click
 import functools
 import logging
-import rich.console
 import rich.logging
-from .utils import *
+from ... import utils
 
 
 def logging_options(wrapped_command_function):
@@ -21,15 +20,17 @@ def logging_options(wrapped_command_function):
         if silent:
             level = logging.ERROR
 
-        console = rich.console.Console(stderr=True)
         logging.basicConfig(
-            format="%(name)15s: %(message)s",
+            format="%(name)20s: %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
             level=level,
-            handlers=[rich.logging.RichHandler(console=console)],
+            handlers=[rich.logging.RichHandler(console=utils.console)],
         )
 
         logging.getLogger().setLevel(level)
+
+        for lgr in ['urllib3.connectionpool']:
+            logging.getLogger(lgr).setLevel(logging.ERROR)
 
         return wrapped_command_function(*args, **kwargs)
 
